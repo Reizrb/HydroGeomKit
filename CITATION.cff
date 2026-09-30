@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the article below."
+title: "HydroGeomKit"
+type: software
+authors:
+  - family-names: Zarrabi
+    given-names: Reihaneh
+    affiliation: "University of Alabama"
+license: MIT
+version: "0.3.0"
+repository-code: "https://github.com/Reizrb/HydroGeomKit"
+abstract: "Python package to get bankfull and mean-flow channel width and depth for NHDPlusV2.1 reaches and USGS gages across CONUS, and to compute cross-sectional area, wetted perimeter, and hydraulic radius."
+keywords:
+  - "hydrology"
+  - "channel geometry"
+  - "bankfull"
+  - "NHDPlus"
+  - "hydraulic geometry"
+  - "Python"
+references:
+  - type: data
+    title: "Bankfull and mean-flow channel geometry for CONUS"
+    authors:
+      - family-names: Zarrabi
+        given-names: Reihaneh
+    doi: 10.5281/zenodo.19208847
+    url: "https://doi.org/10.5281/zenodo.19208847"
+preferred-citation:
+  type: article
+  title: "Bankfull and mean-flow channel geometry estimation through machine learning algorithms across the CONtiguous United States (CONUS)"
+  authors:
+    - family-names: Zarrabi
+      given-names: Reihaneh
+    - family-names: McDermott
+      given-names: R.
+    - family-names: Erfani
+      given-names: S. M. H.
+    - family-names: Cohen
+      given-names: Sagy
+  journal: "Water Resources Research"
+  volume: 61
+  issue: 2
+  year: 2025
+  doi: 10.1029/2024WR037997
