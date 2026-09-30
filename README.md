@@ -74,6 +74,96 @@ are preserved. Records without a prediction have empty (NaN) width and depth.
 For all 2.7 million reaches, download the full dataset from
 [Zenodo](https://doi.org/10.5281/zenodo.19208847).
 
+## Compute hydraulic geometry
+
+Three functions compute the cross-section geometry of a channel from its top width
+and depth, for a chosen channel shape:
+
+| Function | Returns | Units |
+|----------|---------|-------|
+| `xsec_area` | Cross-sectional area | m² |
+| `wetted_perimeter` | Wetted perimeter | m |
+| `hydraulic_radius` | Hydraulic radius (area / wetted perimeter) | m |
+
+```python
+from hydrogeomkit import get_channel_geometry, xsec_area, wetted_perimeter, hydraulic_radius
+
+df = get_channel_geometry(huc8="03160112")
+
+# Dingman's r (bank curvature)
+df["bnk_xsce_A"] = xsec_area(df["bnk_width"], df["bnk_depth"], shape="r", r=2)
+df["bnk_wet_p"] = wetted_perimeter(df["bnk_width"], df["bnk_depth"], shape="r", r=2)
+df["bnk_hyd_R"] = hydraulic_radius(df["bnk_width"], df["bnk_depth"], shape="r", r=2)
+
+# Bottom-to-top width ratio a, with a different value for each reach
+df["mf_xsce_A"] = xsec_area(df["mf_width"], df["mf_depth"], shape="a", a=df["my_a"])
+
+# Side slope z:1
+df["bnk_wet_p_z"] = wetted_perimeter(df["bnk_width"], df["bnk_depth"], shape="z", z=2)
+
+# Single values
+A = xsec_area(width=18.19, depth=1.23, shape="r", r=2)
+```
+
+### Channel shape parameters
+
+Each function takes the top width (`width`, w<sub>bnk</sub>) and depth (`depth`,
+d<sub>bnk</sub>), plus one shape parameter. All three shapes assume a **symmetric
+channel**: both banks have the same shape and slope, and the deepest point is at the
+center of the channel.
+
+<table>
+<tr>
+<td align="center"><img src="assets/channel_shape_a.png" alt="Parameter a" height="220"><br><b>(a)</b> <code>shape="a"</code></td>
+<td align="center"><img src="assets/channel_shape_r.png" alt="Parameter r" height="220"><br><b>(b)</b> <code>shape="r"</code></td>
+<td align="center"><img src="assets/channel_shape_z.png" alt="Parameter z" height="220"><br><b>(c)</b> <code>shape="z"</code></td>
+</tr>
+</table>
+
+- **`a`, bottom-to-top width ratio** (panel a): `a = w_bot / w_bnk`, from 0 to 1.
+  `a = 0` is a triangular channel, `a = 1` a rectangular channel, and values in
+  between are trapezoids, closer to rectangular as `a` increases.
+- **`r`, Dingman's shape parameter** (panel b; Dingman & Afshari, 2018): defines the
+  curvature of the banks, with the bed height following `z = d_bnk (2 / w_bnk)^r x^r`
+  for `0 <= x <= w_bnk / 2` (in this equation, `z` is height, not the side slope below). `r = 1` is triangular, `r = 2` parabolic, and higher values
+  approach rectangular. `r` must be at least 1.
+- **`z`, side slope** (panel c): banks with a slope of `z` horizontal to 1 vertical
+  (`z:1`), so the bottom width is `w_bnk − 2 z d_bnk`. `z = 0` is rectangular. The
+  banks must fit inside the top width (`w_bnk >= 2 z d_bnk`); rows where they don't
+  get an empty result, with a warning.
+
+Panels (a) and (b) are from Figure 3 of Zarrabi et al. (2026).
+
+| Shape | Area | Wetted perimeter |
+|-------|------|------------------|
+| `a`: bottom width `b = aW` | `A = (b + W) D / 2` | `P = b + 2√(D² + ((W − b)/2)²)` |
+| `r`: Dingman's r | `A = r/(r+1) W D` | `P = W ∫₀¹ √(1 + (rβ)² u^(2r−2)) du`, `β = 2D/W` (adaptive integration) |
+| `z`: side slope z:1, bottom width `b = W − 2zD` | `A = (W − zD) D` | `P = b + 2D√(1 + z²)` |
+
+W is the top width and D the depth, in meters.
+
+### Inputs and outputs
+
+- `width`, `depth`, and the shape parameter (`r`, `a`, or `z`) can each be a single
+  number, a list, an array, or a pandas column, so the shape parameter can change
+  from row to row.
+- A pandas column in gives a pandas column out, with the same index, so results can be
+  added straight to your table. A single number in gives a single number out.
+- Missing, zero, or negative widths or depths, or a missing shape parameter, give an
+  empty (NaN) result for that row only.
+- `r` below 1, `a` outside 0 to 1, or a negative `z` stops with an error.
+- The functions work on any widths and depths, not only data from the API, and need no
+  internet connection.
+
+### References
+
+- Dingman, S. L., & Afshari, S. (2018). Field verification of analytical at-a-station
+  hydraulic-geometry relations. *Journal of Hydrology*.
+- Zarrabi, R., Cohen, S., Pruitt, C., Baruah, A., McDermott, R., & Chen, Y. (2026).
+  Sensitivity of terrain-based flood inundation model (OWP HAND-FIM) predictions to
+  channel geometry: Insights from bathymetric adjustments of rating curves and stage
+  shift. *Journal of Hydrology*.
+
 ## Errors
 
 - `TooManyRecords`: the area is too big for one call. It has `.records` and
